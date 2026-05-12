@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Energie Analyse</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ── TOKENS ─────────────────────────────────────────────────── */
+:root {
+  --bg:          #0a1a0f;
+  --bg-2:        #0f2415;
+  --bg-3:        #162e1b;
+  --card:        #111e15;
+  --card-border: rgba(80, 200, 100, 0.12);
+  --card-hover:  rgba(80, 200, 100, 0.06);
+
+  --green-bright: #4ade80;
+  --green-mid:    #22c55e;
+  --green-deep:   #16a34a;
+  --green-glow:   rgba(74, 222, 128, 0.18);
+  --green-subtle: rgba(74, 222, 128, 0.08);
+
+  --text-primary:   #f0faf2;
+  --text-secondary: #8db896;
+  --text-muted:     #4a6e52;
+
+  --radius-sm:  10px;
+  --radius-md:  18px;
+  --radius-lg:  26px;
+  --radius-xl:  36px;
+
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.4), 0 1px 0 rgba(74,222,128,0.06) inset;
+  --shadow-glow: 0 0 40px rgba(74, 222, 128, 0.15);
+  --transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── RESET & BASE ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtiele radiale glow op de achtergrond */
+body::before {
+  content: '';
+  position: fixed;
+  top: -20vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70vw;
+  height: 60vh;
+  background: radial-gradient(ellipse, rgba(34, 197, 94, 0.07) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── LAYOUT WRAPPER ────────────────────────────────────────── */
+.app-wrapper {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+}
+
+/* ── APP HEADER ────────────────────────────────────────────── */
+.app-header {
+  text-align: center;
+  padding: 52px 0 36px;
+}
+
+.app-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.app-logo-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--green-bright), var(--green-deep));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 0 20px var(--green-glow);
+}
+
+.app-logo-text {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+/* ── VOORTGANGSBALK ────────────────────────────────────────── */
+#voortgang {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 36px;
+}
+
+#voortgang > div {
+  width: 28px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-3);
+  transition: var(--transition);
+}
+
+#voortgang > div[data-status="klaar"] {
+  background: var(--green-deep);
+}
+
+#voortgang > div[data-status="actief"] {
+  background: var(--green-bright);
+  box-shadow: 0 0 10px var(--green-glow);
+  width: 44px;
+}
+
+/* ── KAART (base) ──────────────────────────────────────────── */
+.stap-kaart {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  padding: 36px;
+  box-shadow: var(--shadow-card);
+  animation: fadeUp 0.35s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── STAP TITELS ───────────────────────────────────────────── */
+.stap-kaart h2 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.stap-kaart .stap-sub {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 28px;
+}
+
+.stap-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  margin-top: 22px;
+}
+
+.stap-label:first-of-type { margin-top: 0; }
+
+/* ── STAP WRAPPERS (alle stappen onzichtbaar tenzij actief) ── */
+#stap-0, #stap-1, #stap-2, #stap-3, #stap-4, #stap-5, #stap-6 {
+  /* worden via JS getoond/verborgen */
+}
+
+/* ── UPLOAD ZONE ───────────────────────────────────────────── */
+.upload-zone {
+  border: 2px dashed rgba(74, 222, 128, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 52px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  background: var(--green-subtle);
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(74,222,128,0.06), transparent 60%);
+  pointer-events: none;
+}
+
+.upload-zone:hover {
+  border-color: rgba(74, 222, 128, 0.5);
+  background: rgba(74, 222, 128, 0.1);
+  box-shadow: var(--shadow-glow);
+}
+
+.upload-icon {
+  font-size: 2.8rem;
+  margin-bottom: 16px;
+  display: block;
+  filter: drop-shadow(0 0 12px var(--green-glow));
+}
+
+.upload-zone p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.upload-zone .upload-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* ── FOUT KAART ────────────────────────────────────────────── */
+#fout-kaart {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  color: #fca5a5;
+  font-size: 0.88rem;
+  margin-top: 16px;
+}
+
+/* ── SUCCES MELDING ────────────────────────────────────────── */
+[data-succes] {
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  color: var(--green-bright);
+  font-size: 0.88rem;
+  margin-top: 16px;
+  line-height: 1.5;
+}
+
+/* ── PRIMAIRE KNOP ─────────────────────────────────────────── */
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  transition: var(--transition);
+}
+
+/* Hoofd "verder" knop */
+#knop-stap0-verder,
+.knop-verder {
+  width: 100%;
+  margin-top: 24px;
+  padding: 17px 28px;
+  background: linear-gradient(135deg, var(--green-bright) 0%, var(--green-mid) 100%);
+  color: #0a1a0f;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(74, 222, 128, 0.3);
+}
+
+#knop-stap0-verder:hover:not(:disabled),
+.knop-verder:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(74, 222, 128, 0.4);
+}
+
+#knop-stap0-verder:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ── NAVIGATIEKNOPPEN (Terug / Verder in stappen) ────────────── */
+.knop-rij {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.knop-rij button,
+#stap-1 button, #stap-2 button, #stap-3 button, #stap-4 button {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Terug-knop (alle buttons die niet de hoofd-CTA zijn) */
+#stap-1 button:first-of-type,
+#stap-2 button[onclick*="gaNaar(1)"],
+#stap-3 button[onclick*="gaNaar(2)"],
+#stap-4 button[onclick*="gaNaar(3)"] {
+  background: var(--bg-3);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+}
+
+#stap-1 button:first-of-type:hover,
+#stap-2 button[onclick*="gaNaar(1)"]:hover,
+#stap-3 button[onclick*="gaNaar(2)"]:hover,
+#stap-4 button[onclick*="gaNaar(3)"]:hover {
+  background: var(--bg-2);
+  color: var(--text-primary);
+}
+
+/* Verder-knoppen groen */
+#stap-1 button:last-of-type,
+#stap-2 button[onclick*="gaNaar(3)"],
+#stap-3 button[onclick*="gaNaar(4)"],
+#stap-4 button[onclick*="startAnalyse"] {
+  background: linear-gradient(135deg, var(--green-bright), var(--green-mid));
+  color: #0a1a0f;
+  box-shadow: 0 4px 16px rgba(74, 222, 128, 0.25);
+}
+
+#stap-1 button:last-of-type:hover,
+#stap-2 button[onclick*="gaNaar(3)"]:hover,
+#stap-3 button[onclick*="gaNaar(4)"]:hover,
+#stap-4 button[onclick*="startAnalyse"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(74, 222, 128, 0.35);
+}
+
+/* Ja/Nee knoppen in stap 2-4 */
+#stap-2 > button,
+#stap-3 > button {
+  padding: 10px 22px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: var(--bg-3);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  margin-right: 8px;
+  margin-bottom: 4px;
+}
+
+#stap-2 > button[data-geselecteerd="ja"],
+#stap-3 > button[data-geselecteerd="ja"] {
+  background: var(--green-subtle);
+  border-color: var(--green-bright);
+  color: var(--green-bright);
+  box-shadow: 0 0 14px var(--green-glow);
+}
+
+/* Contract knoppen stap 4 */
+#stap-4 > button {
+  padding: 10px 22px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: var(--bg-3);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  margin-right: 8px;
+  margin-bottom: 4px;
+}
+
+#stap-4 > button[data-geselecteerd="ja"] {
+  background: var(--green-subtle);
+  border-color: var(--green-bright);
+  color: var(--green-bright);
+  box-shadow: 0 0 14px var(--green-glow);
+}
+
+/* ── INVOERVELDEN ──────────────────────────────────────────── */
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  padding: 14px 18px;
+  background: var(--bg-3);
+  border: 1px solid rgba(80, 200, 100, 0.15);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+  transition: var(--transition);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+input[type="text"]::placeholder,
+input[type="number"]::placeholder {
+  color: var(--text-muted);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  outline: none;
+  border-color: var(--green-bright);
+  background: var(--bg-2);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
+}
+
+/* ── KEUZE KAARTEN (woningtype, wp-type, apparaten) ──────────── */
+#woningtype-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+#woningtype-grid .keuze-kaart:last-child:nth-child(3n+1) {
+  grid-column: span 3;
+}
+
+#woningtype-grid .keuze-kaart:nth-last-child(2):nth-child(odd),
+#woningtype-grid .keuze-kaart:last-child:nth-child(even) {
+  grid-column: span 1;
+}
+
+/* Als 5 kaarten: 3 + 2 */
+#woningtype-grid .keuze-kaart:nth-child(4),
+#woningtype-grid .keuze-kaart:nth-child(5) {
+  /* normaal 1 kolom blijven */
+}
+
+.keuze-kaart {
+  padding: 14px 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-3);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.keuze-kaart:hover {
+  border-color: rgba(74, 222, 128, 0.3);
+  color: var(--text-primary);
+  background: var(--card-hover);
+}
+
+.keuze-kaart[data-geselecteerd="ja"] {
+  background: var(--green-subtle);
+  border-color: var(--green-bright);
+  color: var(--green-bright);
+  box-shadow: 0 0 18px var(--green-glow);
+}
+
+#wp-type-groep {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0 20px;
+  flex-wrap: wrap;
+}
+
+#wp-type-groep .keuze-kaart {
+  flex: 1;
+  min-width: 100px;
+}
+
+#was-apparaten-groep {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0 20px;
+  flex-wrap: wrap;
+}
+
+#was-apparaten-groep .keuze-kaart {
+  flex: 1;
+  min-width: 110px;
+}
+
+/* ── ZON / WP EXTRA VELDEN ─────────────────────────────────── */
+#zon-groep {
+  display: flex;
+  gap: 12px;
+  margin: 12px 0 20px;
+}
+
+#zon-groep input {
+  margin-bottom: 0;
+}
+
+#vast-tarief-groep {
+  display: flex;
+  gap: 12px;
+  margin: 14px 0 8px;
+}
+
+#vast-tarief-groep input {
+  margin-bottom: 0;
+}
+
+/* ── LABEL BOVEN JA/NEE ────────────────────────────────────── */
+#stap-2 > p,
+#stap-3 > p,
+#stap-4 > p {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  margin-top: 22px;
+}
+
+#stap-2 > p:first-child,
+#stap-3 > p:first-child,
+#stap-4 > p:first-child {
+  margin-top: 0;
+}
+
+/* ── ANALYSE STAP ──────────────────────────────────────────── */
+#stap-5 {
+  text-align: center;
+  padding: 72px 32px;
+}
+
+#stap-5 .analyse-orb {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--green-bright), var(--green-deep));
+  margin: 0 auto 28px;
+  animation: pulse 1.6s ease-in-out infinite;
+  box-shadow: 0 0 40px var(--green-glow);
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.12); opacity: 0.8; }
+}
+
+#analyse-status {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  animation: statusFade 0.4s ease both;
+}
+
+@keyframes statusFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESULTAAT ─────────────────────────────────────────────── */
+#stap-6 {
+  animation: fadeUp 0.4s ease both;
+}
+
+.resultaat-hero {
+  text-align: center;
+  padding: 40px 28px 32px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.resultaat-hero::before {
+  content: '';
+  position: absolute;
+  top: -40px; left: 50%;
+  transform: translateX(-50%);
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(74,222,128,0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.resultaat-hero .res-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.resultaat-hero h2 {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--green-bright);
+  text-shadow: 0 0 30px rgba(74,222,128,0.3);
+  margin-bottom: 8px;
+}
+
+.resultaat-hero h2 .euro-sym {
+  font-size: 1.8rem;
+  vertical-align: super;
+  margin-right: 2px;
+}
+
+.resultaat-hero h2 .jaar-label {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+#res-totaal-sub {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+/* ── DISAGGREGATIE BALKEN ──────────────────────────────────── */
+.sectie-kaart {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-card);
+}
+
+.sectie-kaart h3 {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+[data-disagg] {
+  margin-bottom: 18px;
+}
+
+[data-disagg]:last-child { margin-bottom: 0; }
+
+[data-disagg] > span:first-child {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+[data-disagg] > span:nth-child(2) {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+[data-balk] {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--green-bright), var(--green-mid));
+  width: var(--breedte, 0%);
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+  animation: balkGroei 1s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes balkGroei {
+  from { width: 0 !important; }
+  to   { width: var(--breedte) !important; }
+}
+
+/* kleuren per categorie */
+[data-disagg="warmtepomp"] [data-balk] { background: linear-gradient(90deg, #f97316, #ea580c); box-shadow: 0 0 10px rgba(249,115,22,0.3); }
+[data-disagg="ev"]         [data-balk] { background: linear-gradient(90deg, #60a5fa, #3b82f6); box-shadow: 0 0 10px rgba(96,165,250,0.3); }
+[data-disagg="koken"]      [data-balk] { background: linear-gradient(90deg, #c084fc, #a855f7); box-shadow: 0 0 10px rgba(192,132,252,0.3); }
+[data-disagg="zon"]        [data-balk] { background: linear-gradient(90deg, #fbbf24, #f59e0b); box-shadow: 0 0 10px rgba(251,191,36,0.3); }
+[data-disagg="overig"]     [data-balk] { background: linear-gradient(90deg, #94a3b8, #64748b); box-shadow: none; }
+
+/* ── ADVIES KAARTEN ────────────────────────────────────────── */
+#advies-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+[data-advies] {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  padding: 26px 28px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+[data-advies]:hover {
+  border-color: rgba(74, 222, 128, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), var(--shadow-glow);
+}
+
+[data-advies]::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(74,222,128,0.3), transparent);
+}
+
+[data-icoon] {
+  font-size: 1.8rem;
+  display: block;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 0 8px rgba(74,222,128,0.2));
+}
+
+[data-advies] h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+[data-betrouwbaarheid] {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+[data-betrouwbaarheid="hoog"] {
+  background: rgba(74, 222, 128, 0.12);
+  color: var(--green-bright);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+}
+
+[data-betrouwbaarheid="gemiddeld"] {
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+[data-betrouwbaarheid="laag"] {
+  background: rgba(148, 163, 184, 0.1);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+[data-bedrag] {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--green-bright);
+  margin-bottom: 10px;
+}
+
+[data-bedrag] small {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+[data-advies] > p:not([data-bedrag]):not([data-actie]) {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+[data-actie] {
+  background: var(--green-subtle);
+  border: 1px solid rgba(74, 222, 128, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.83rem;
+  color: var(--green-bright);
+  line-height: 1.5;
+}
+
+/* ── DIVIDER ───────────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--card-border), transparent);
+  margin: 24px 0;
+}
+
+/* ── SCROLLBAR ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--green-deep); }
+
+/* ── RESPONSIVE ────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .stap-kaart { padding: 24px 20px; border-radius: var(--radius-lg); }
+  #woningtype-grid { grid-template-columns: repeat(2, 1fr); }
+  .resultaat-hero h2 { font-size: 2.2rem; }
+  #zon-groep, #vast-tarief-groep { flex-direction: column; }
+}
+</style>
+
+</head>
+<body>
+
+<div class="app-wrapper">
+
+  <!-- LOGO -->
+  <header class="app-header">
+    <div class="app-logo">
+      <div class="app-logo-icon">⚡</div>
+      <span class="app-logo-text">EnergieInzicht</span>
+    </div>
+  </header>
+
+  <!-- VOORTGANG -->
+  <div id="voortgang">
+    <div id="ind-0"></div><div id="ind-1"></div><div id="ind-2"></div>
+    <div id="ind-3"></div><div id="ind-4"></div><div id="ind-5"></div>
+    <div id="ind-6"></div>
+  </div>
+
+  <!-- STAP 0: CSV UPLOAD -->
+  <div id="stap-0" class="stap-kaart">
+    <h2>Laad je P1 data</h2>
+    <p class="stap-sub">Exporteer een CSV vanuit de HomeWizard app en sleep hem hieronder.</p>
+
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('csv-input').click()">
+      <span class="upload-icon">📂</span>
+      <p>Sleep je CSV hier of klik om te kiezen</p>
+      <p class="upload-hint">HomeWizard P1 export · .csv bestand</p>
+      <input type="file" id="csv-input" accept=".csv" style="display:none">
+    </div>
+
+    <div id="fout-kaart" style="display:none">⚠️ <span id="fout-tekst"></span></div>
+    <div id="succes-container"></div>
+
+    <button id="knop-stap0-verder" onclick="gaNaar(1)">Verder →</button>
+  </div>
+
+  <!-- STAP 1: WONING -->
+  <div id="stap-1" class="stap-kaart" style="display:none">
+    <h2>Jouw woning</h2>
+    <p class="stap-sub">Vertel ons iets over je thuissituatie.</p>
+
+    <span class="stap-label">Adres</span>
+    <div style="display:flex;gap:12px;">
+      <input type="text" id="postcode" placeholder="1234 AB" style="flex:1;margin-bottom:0">
+      <input type="text" id="huisnummer" placeholder="12" style="width:90px;margin-bottom:0">
+    </div>
+
+    <span class="stap-label" style="margin-top:20px;">Woningtype</span>
+    <div id="woningtype-grid">
+      <div class="keuze-kaart" onclick="selecteer('woningtype','Vrijstaand',this)">🏡 Vrijstaand</div>
+      <div class="keuze-kaart" onclick="selecteer('woningtype','Hoekwoning',this)">🏠 Hoekwoning</div>
+      <div class="keuze-kaart" onclick="selecteer('woningtype','2-onder-1-kap',this)">🏘 2-onder-1-kap</div>
+      <div class="keuze-kaart" onclick="selecteer('woningtype','Tussenwoning',this)">🏚 Tussenwoning</div>
+      <div class="keuze-kaart" onclick="selecteer('woningtype','Appartement',this)">🏢 Appartement</div>
+    </div>
+
+    <span class="stap-label">Oppervlakte & bewoners</span>
+    <div style="display:flex;gap:12px;">
+      <input type="number" id="oppervlakte" placeholder="Oppervlakte m²" style="flex:1;margin-bottom:0">
+      <input type="number" id="bewoners" placeholder="Bewoners" style="width:110px;margin-bottom:0">
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:24px;">
+      <button onclick="gaNaar(0)" style="flex:1;padding:14px;background:var(--bg-3);border:1px solid var(--card-border);border-radius:var(--radius-md);color:var(--text-secondary);font-family:var(--font-display);font-size:0.88rem;font-weight:600;">← Terug</button>
+      <button onclick="valideerWoning()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--green-bright),var(--green-mid));color:#0a1a0f;border-radius:var(--radius-md);font-family:var(--font-display);font-size:0.88rem;font-weight:700;box-shadow:0 4px 16px rgba(74,222,128,0.25);">Verder →</button>
+    </div>
+  </div>
+
+  <!-- STAP 2: INSTALLATIES -->
+  <div id="stap-2" class="stap-kaart" style="display:none">
+    <h2>Installaties</h2>
+    <p class="stap-sub">Welke slimme apparaten heb je thuis?</p>
+
+    <div data-vraag>
+      <p>Warmtepomp?</p>
+      <button onclick="jaNeeSelecteer('heeft_wp', true, this)">Ja</button>
+      <button onclick="jaNeeSelecteer('heeft_wp', false, this)">Nee</button>
+    </div>
+
+    <div id="wp-type-groep" style="display:none">
+      <div class="keuze-kaart" onclick="selecteer('wp_type','Lucht-water',this)">💨 Lucht-water</div>
+      <div class="keuze-kaart" onclick="selecteer('wp_type','Bodem-water',this)">🌍 Bodem-water</div>
+      <div class="keuze-kaart" onclick="selecteer('wp_type','Hybride',this)">⚡ Hybride</div>
+    </div>
+
+    <div data-vraag>
+      <p>Elektrische auto thuis laden?</p>
+      <button onclick="jaNeeSelecteer('heeft_ev', true, this)">Ja</button>
+      <button onclick="jaNeeSelecteer('heeft_ev', false, this)">Nee</button>
+    </div>
+
+    <div data-vraag>
+      <p>Zonnepanelen?</p>
+      <button onclick="jaNeeSelecteer('heeft_zon', true, this)">Ja</button>
+      <button onclick="jaNeeSelecteer('heeft_zon', false, this)">Nee</button>
+    </div>
+
+    <div id="zon-groep" style="display:none">
+      <input type="number" id="zon-aantal" placeholder="Aantal panelen">
+      <input type="number" id="zon-jaar" placeholder="Installatiejaar">
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:24px;">
+      <button onclick="gaNaar(1)" style="flex:1;padding:14px;background:var(--bg-3);border:1px solid var(--card-border);border-radius:var(--radius-md);color:var(--text-secondary);font-family:var(--font-display);font-size:0.88rem;font-weight:600;">← Terug</button>
+      <button onclick="gaNaar(3)" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--green-bright),var(--green-mid));color:#0a1a0f;border-radius:var(--radius-md);font-family:var(--font-display);font-size:0.88rem;font-weight:700;box-shadow:0 4px 16px rgba(74,222,128,0.25);">Verder →</button>
+    </div>
+  </div>
+
+  <!-- STAP 3: APPARATEN -->
+  <div id="stap-3" class="stap-kaart" style="display:none">
+    <h2>Huishoudelijke apparaten</h2>
+    <p class="stap-sub">Heb je een wasmachine, droger of vaatwasser?</p>
+
+    <div data-vraag>
+      <p>Wasmachine, droger of vaatwasser?</p>
+      <button onclick="jaNeeSelecteer('heeft_was', true, this)">Ja</button>
+      <button onclick="jaNeeSelecteer('heeft_was', false, this)">Nee</button>
+    </div>
+
+    <div id="was-apparaten-groep" style="display:none">
+      <div class="keuze-kaart" onclick="toggleApparaat('wasmachine',this)">👕 Wasmachine</div>
+      <div class="keuze-kaart" onclick="toggleApparaat('droger',this)">🌀 Droger</div>
+      <div class="keuze-kaart" onclick="toggleApparaat('vaatwasser',this)">🍽 Vaatwasser</div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:24px;">
+      <button onclick="gaNaar(2)" style="flex:1;padding:14px;background:var(--bg-3);border:1px solid var(--card-border);border-radius:var(--radius-md);color:var(--text-secondary);font-family:var(--font-display);font-size:0.88rem;font-weight:600;">← Terug</button>
+      <button onclick="gaNaar(4)" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--green-bright),var(--green-mid));color:#0a1a0f;border-radius:var(--radius-md);font-family:var(--font-display);font-size:0.88rem;font-weight:700;box-shadow:0 4px 16px rgba(74,222,128,0.25);">Verder →</button>
+    </div>
+  </div>
+
+  <!-- STAP 4: CONTRACT -->
+  <div id="stap-4" class="stap-kaart" style="display:none">
+    <h2>Je energiecontract</h2>
+    <p class="stap-sub">Wat voor tarief heb je bij je energieleverancier?</p>
+
+    <div data-vraag>
+      <p>Type contract</p>
+      <button onclick="jaNeeSelecteer('contract_type','vast',this)">📄 Vast tarief</button>
+      <button onclick="jaNeeSelecteer('contract_type','dynamisch',this)">📈 Dynamisch tarief</button>
+    </div>
+
+    <div id="vast-tarief-groep" style="display:none">
+      <input type="number" id="tarief-levering" placeholder="Leveringstarief €/kWh" step="0.01">
+      <input type="number" id="tarief-teruglevering" placeholder="Teruglevertarief €/kWh" step="0.01">
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:24px;">
+      <button onclick="gaNaar(3)" style="flex:1;padding:14px;background:var(--bg-3);border:1px solid var(--card-border);border-radius:var(--radius-md);color:var(--text-secondary);font-family:var(--font-display);font-size:0.88rem;font-weight:600;">← Terug</button>
+      <button onclick="startAnalyse()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--green-bright),var(--green-mid));color:#0a1a0f;border-radius:var(--radius-md);font-family:var(--font-display);font-size:0.88rem;font-weight:700;box-shadow:0 4px 16px rgba(74,222,128,0.25);">🔍 Analyseer</button>
+    </div>
+  </div>
+
+  <!-- STAP 5: ANALYSE BEZIG -->
+  <div id="stap-5" style="display:none">
+    <div class="stap-kaart" style="text-align:center;padding:64px 32px;">
+      <div class="analyse-orb"></div>
+      <p id="analyse-status">Bezig met analyseren...</p>
+    </div>
+  </div>
+
+  <!-- STAP 6: RESULTAAT -->
+  <div id="stap-6" style="display:none">
+
+    <div class="resultaat-hero">
+      <p class="res-label">Jouw besparingspotentieel</p>
+      <h2><span class="euro-sym">€</span><span id="res-totaal">0</span><span class="jaar-label">/jaar</span></h2>
+      <p id="res-totaal-sub"></p>
+    </div>
+
+    <div class="sectie-kaart">
+      <h3>Verbruiksopbouw</h3>
+      <div id="disagg-balken"></div>
+    </div>
+
+    <div id="advies-container"></div>
+
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- ANALYSE LOGICA — NIET AANPASSEN                             -->
+<!-- ============================================================ -->
+<script>
+// ── STAAT ────────────────────────────────────────────────────────
+const staat = {
+  csvData: null, df: [], intervalMin: 15,
+  postcode: '', huisnummer: '', woningtype: '', oppervlakte: 0, bewoners: 0,
+  heeft_wp: null, wp_type: '',
+  heeft_ev: null,
+  heeft_zon: null, zon_aantal: 0, zon_jaar: 2022,
+  heeft_was: null, was_apparaten: [],
+  contract_type: null, tarief_levering: 0.22, tarief_teruglevering: 0.09,
+  // EnergyZero prijsdata: Map van "YYYY-MM-DDTHH" → prijs in €/kWh (excl. BTW)
+  uurprijzen: new Map(),
+  prijsdataGeladen: false,
+};
+const huidigeStap = { nr: 0 };
+
+// ── NAVIGATIE ────────────────────────────────────────────────────
+function gaNaar(nr) {
+  document.getElementById(`stap-${huidigeStap.nr}`).style.display = 'none';
+  document.getElementById(`stap-${nr}`).style.display = 'block';
+  for (let i = 0; i < 7; i++) {
+    const ind = document.getElementById(`ind-${i}`);
+    if (!ind) continue;
+    ind.dataset.status = i < nr ? 'klaar' : i === nr ? 'actief' : '';
+  }
+  huidigeStap.nr = nr;
+  window.scrollTo(0, 0);
+}
+
+function selecteer(sleutel, waarde, el) {
+  staat[sleutel] = waarde;
+  el.closest('[id$="-grid"], #wp-type-groep').querySelectorAll('.keuze-kaart')
+    .forEach(k => k.dataset.geselecteerd = '');
+  el.dataset.geselecteerd = 'ja';
+}
+
+function jaNeeSelecteer(sleutel, waarde, el) {
+  staat[sleutel] = waarde;
+  if (sleutel === 'heeft_wp') document.getElementById('wp-type-groep').style.display = waarde ? 'block' : 'none';
+  if (sleutel === 'heeft_zon') document.getElementById('zon-groep').style.display = waarde ? 'block' : 'none';
+  if (sleutel === 'heeft_was') document.getElementById('was-apparaten-groep').style.display = waarde ? 'block' : 'none';
+  if (sleutel === 'contract_type') document.getElementById('vast-tarief-groep').style.display = waarde === 'vast' ? 'block' : 'none';
+  // Reset alleen de knoppen van diezelfde vraaggroep, niet van andere vragen
+  el.closest('[data-vraag]').querySelectorAll('button').forEach(b => b.dataset.geselecteerd = '');
+  el.dataset.geselecteerd = 'ja';
+}
+
+function toggleApparaat(naam, el) {
+  el.dataset.geselecteerd = el.dataset.geselecteerd === 'ja' ? '' : 'ja';
+  if (el.dataset.geselecteerd === 'ja') { if (!staat.was_apparaten.includes(naam)) staat.was_apparaten.push(naam); }
+  else staat.was_apparaten = staat.was_apparaten.filter(a => a !== naam);
+}
+
+// ── CSV UPLOAD ───────────────────────────────────────────────────
+document.getElementById('upload-zone').addEventListener('dragover', e => e.preventDefault());
+document.getElementById('upload-zone').addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files[0]) verwerkCSV(e.dataTransfer.files[0]); });
+document.getElementById('csv-input').addEventListener('change', e => { if (e.target.files[0]) verwerkCSV(e.target.files[0]); });
+
+function verwerkCSV(bestand) {
+  const lezer = new FileReader();
+  lezer.onload = e => {
+    try {
+      const tekst = e.target.result;
+      const regels = tekst.trim().split('\n');
+      const headers = regels[0].split(',').map(h => h.trim().toLowerCase());
+      if (!headers.some(h => h.includes('import') || h.includes('levering'))) {
+        toonFout('Formaat niet herkend. Verwacht een HomeWizard P1 CSV export.'); return;
+      }
+      const idx = {
+        tijd:  headers.findIndex(h => h === 'time' || h === 'datetime' || h === 'tijdstip'),
+        impT1: headers.findIndex(h => h.includes('import t1') || h.includes('levering dal')),
+        impT2: headers.findIndex(h => h.includes('import t2') || h.includes('levering normaal')),
+        expT1: headers.findIndex(h => h.includes('export t1') || h.includes('teruglevering dal')),
+        expT2: headers.findIndex(h => h.includes('export t2') || h.includes('teruglevering normaal')),
+        l1: headers.findIndex(h => h === 'l1 max w'),
+        l2: headers.findIndex(h => h === 'l2 max w'),
+        l3: headers.findIndex(h => h === 'l3 max w'),
+      };
+      if (idx.tijd === -1 || idx.impT1 === -1) { toonFout('Kolomnamen niet herkend.'); return; }
+      const df = [];
+      for (let i = 1; i < regels.length; i++) {
+        const cols = regels[i].split(',');
+        if (cols.length < 4) continue;
+        const rij = {
+          tijd: new Date(cols[idx.tijd]),
+          impT1: parseFloat(cols[idx.impT1])||0, impT2: parseFloat(cols[idx.impT2])||0,
+          expT1: idx.expT1>=0?parseFloat(cols[idx.expT1])||0:0, expT2: idx.expT2>=0?parseFloat(cols[idx.expT2])||0:0,
+          l1: idx.l1>=0?parseFloat(cols[idx.l1])||0:0, l2: idx.l2>=0?parseFloat(cols[idx.l2])||0:0, l3: idx.l3>=0?parseFloat(cols[idx.l3])||0:0,
+        };
+        if (!isNaN(rij.tijd.getTime())) df.push(rij);
+      }
+      if (df.length < 100) { toonFout('Te weinig data gevonden.'); return; }
+      const uniek = new Map();
+      df.forEach(r => uniek.set(r.tijd.getTime(), r));
+      staat.df = Array.from(uniek.values()).sort((a,b) => a.tijd - b.tijd);
+      if (staat.df.length > 1) staat.intervalMin = Math.round((staat.df[1].tijd - staat.df[0].tijd) / 60000);
+      for (let i = 1; i < staat.df.length; i++) {
+        staat.df[i].dImp = Math.max(0, (staat.df[i].impT1-staat.df[i-1].impT1)+(staat.df[i].impT2-staat.df[i-1].impT2));
+        staat.df[i].dExp = Math.max(0, (staat.df[i].expT1-staat.df[i-1].expT1)+(staat.df[i].expT2-staat.df[i-1].expT2));
+      }
+      staat.df[0].dImp = 0; staat.df[0].dExp = 0;
+      const start = staat.df[0].tijd, eind = staat.df[staat.df.length-1].tijd;
+      const maanden = (eind-start)/(1000*60*60*24*30.4);
+      const totImp = staat.df.reduce((s,r)=>s+r.dImp,0);
+      const totExp = staat.df.reduce((s,r)=>s+r.dExp,0);
+      if (totExp > 100) staat.heeft_zon = true;
+      verbergFout();
+      document.getElementById('succes-container').innerHTML =
+        `<p data-succes>✅ ${staat.df.length.toLocaleString('nl')} metingen · ${maanden.toFixed(1)} maanden · ${totImp.toFixed(0)} kWh verbruik · ${totExp.toFixed(0)} kWh teruglevering${totExp>100?' · ☀️ zonnepanelen':''}</p>`;
+      document.getElementById('knop-stap0-verder').disabled = false;
+    } catch(err) { toonFout('Fout: ' + err.message); }
+  };
+  lezer.readAsText(bestand);
+}
+
+function toonFout(t) { document.getElementById('fout-kaart').style.display='block'; document.getElementById('fout-tekst').textContent=t; }
+function verbergFout() { document.getElementById('fout-kaart').style.display='none'; }
+
+// ── WONING VALIDATIE ─────────────────────────────────────────────
+function valideerWoning() {
+  staat.postcode = document.getElementById('postcode').value.trim().toUpperCase();
+  staat.huisnummer = document.getElementById('huisnummer').value.trim();
+  staat.oppervlakte = parseInt(document.getElementById('oppervlakte').value)||0;
+  staat.bewoners = parseInt(document.getElementById('bewoners').value)||0;
+  if (!staat.woningtype) { alert('Selecteer een woningtype.'); return; }
+  if (staat.oppervlakte < 20) { alert('Voer een geldig woonoppervlakte in.'); return; }
+  if (staat.bewoners < 1) { alert('Voer het aantal bewoners in.'); return; }
+  gaNaar(2);
+}
+
+// ── ENERGYZERO API ───────────────────────────────────────────────
+// Haalt Nederlandse day-ahead uurprijzen op voor de periode in de CSV.
+// Prijzen zijn in €/kWh excl. BTW (wholesale spotprijs).
+// De API werkt in blokken van max. 30 dagen per request.
+async function haalUurprijzenOp(startDatum, eindDatum) {
+  const prijzen = new Map();
+  const BLOK_DAGEN = 30;
+  let cursor = new Date(startDatum);
+  cursor.setHours(0, 0, 0, 0);
+  const eind = new Date(eindDatum);
+  eind.setHours(23, 59, 59, 999);
+
+  while (cursor <= eind) {
+    const blokEind = new Date(cursor);
+    blokEind.setDate(blokEind.getDate() + BLOK_DAGEN);
+    if (blokEind > eind) blokEind.setTime(eind.getTime());
+
+    const van = cursor.toISOString();
+    const tot = blokEind.toISOString();
+    // interval=4 → uurdata, usageType=1 → elektriciteit, inclBtw=false → excl. BTW
+    const url = `https://api.energyzero.nl/v1/energyprices?fromDate=${van}&tillDate=${tot}&interval=4&usageType=1&inclBtw=false`;
+
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      // Verwacht formaat: { Prices: [ { readingDate: "...", price: 0.123 }, ... ] }
+      const lijst = data.Prices || data.prices || [];
+      lijst.forEach(item => {
+        const dt = new Date(item.readingDate || item.dateTime || item.timestamp);
+        if (!isNaN(dt.getTime())) {
+          // Sleutel: "YYYY-MM-DDTHH" in lokale tijd
+          const sleutel = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}T${String(dt.getHours()).padStart(2,'0')}`;
+          // Prijs is in €/kWh; de API geeft soms €/MWh, check orde van grootte
+          const prijs = parseFloat(item.price);
+          // Als prijs > 10 dan is het waarschijnlijk €/MWh, deel door 1000
+          prijzen.set(sleutel, prijs > 10 ? prijs / 1000 : prijs);
+        }
+      });
+    } catch(err) {
+      console.warn('EnergyZero blok mislukt:', van, '→', tot, err.message);
+      // Ga door met het volgende blok, prijzen blijven leeg voor dit blok
+    }
+
+    cursor.setDate(cursor.getDate() + BLOK_DAGEN + 1);
+  }
+  return prijzen;
+}
+
+// Geeft de uurprijs terug voor een gegeven Date-object.
+// Als de prijs niet beschikbaar is, geeft het een gemiddelde schatting terug.
+function getPrijs(dt) {
+  const sleutel = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}T${String(dt.getHours()).padStart(2,'0')}`;
+  if (staat.uurprijzen.has(sleutel)) return staat.uurprijzen.get(sleutel);
+  // Fallback: gemiddeld NL day-ahead profiel per uur (2023/2024 gemiddelden, €/kWh excl. BTW)
+  const fallback = [0.058,0.052,0.048,0.045,0.046,0.051,0.062,0.078,0.089,0.091,0.085,0.079,0.075,0.072,0.071,0.074,0.082,0.095,0.102,0.098,0.090,0.082,0.073,0.064];
+  return fallback[dt.getHours()] || 0.075;
+}
+
+// ── ANALYSE START ────────────────────────────────────────────────
+async function startAnalyse() {
+  if (staat.contract_type === 'vast') {
+    staat.tarief_levering = parseFloat(document.getElementById('tarief-levering').value)||0.22;
+    staat.tarief_teruglevering = parseFloat(document.getElementById('tarief-teruglevering').value)||0.09;
+  } else {
+    // Bij dynamisch: geen vast tarief, we gebruiken de werkelijke uurprijzen
+    staat.tarief_levering = 0;
+    staat.tarief_teruglevering = 0.08;
+  }
+
+  gaNaar(5);
+
+  const statusEl = document.getElementById('analyse-status');
+  const stappen = [
+    'P1 data verwerken...',
+    'Verbruikspatronen analyseren...',
+    'Warmtepomp detecteren...',
+    'EV laadsessies zoeken...',
+    'Zonnepanelen analyse...',
+  ];
+
+  // Stap 1-5 animatie
+  let i = 0;
+  await new Promise(resolve => {
+    const interval = setInterval(() => {
+      statusEl.textContent = stappen[i] || '';
+      i++;
+      if (i >= stappen.length) { clearInterval(interval); resolve(); }
+    }, 450);
+  });
+
+  // Stap 6: Uurprijzen ophalen — altijd, zodat we ook bij vast tarief per uur kunnen vergelijken
+  if (staat.df.length > 0) {
+    statusEl.textContent = 'Historische uurprijzen ophalen via EnergyZero...';
+    const startDatum = staat.df[0].tijd;
+    const eindDatum  = staat.df[staat.df.length-1].tijd;
+    staat.uurprijzen = await haalUurprijzenOp(startDatum, eindDatum);
+    staat.prijsdataGeladen = staat.uurprijzen.size > 0;
+    statusEl.textContent = staat.prijsdataGeladen
+      ? `✅ ${staat.uurprijzen.size.toLocaleString('nl')} uurprijzen geladen · Besparingspotentieel berekenen...`
+      : '⚠️ Prijsdata niet beschikbaar, schatting op basis van gemiddeld profiel...';
+    await new Promise(r => setTimeout(r, 600));
+  }
+
+  statusEl.textContent = 'Besparingspotentieel berekenen...';
+  await new Promise(r => setTimeout(r, 300));
+
+  toonResultaat(voerAnalyseUit());
+  gaNaar(6);
+}
+
+// ── ANALYSE BEREKENING ───────────────────────────────────────────
+function voerAnalyseUit() {
+  const df = staat.df;
+  const maanden = (df[df.length-1].tijd - df[0].tijd) / (1000*60*60*24*30.4);
+  const schaal = Math.max(1, 12 / maanden);
+  const isDynamisch = staat.contract_type === 'dynamisch';
+
+  // ── Totalen ──
+  const totImpKwh = df.reduce((s,r) => s + r.dImp, 0) * schaal;
+  const totExpKwh = df.reduce((s,r) => s + r.dExp, 0) * schaal;
+
+  // ── EV detectie ──
+  // EV: alle drie fasen tegelijk belast (>1000W per fase)
+  const evM = df.filter(r => r.l1 > 1000 && r.l2 > 1000 && r.l3 > 1000);
+  const evKwh = evM.reduce((s,r) => s + r.dImp, 0) * schaal;
+
+  // EV in avondpiek (17-23u) — dit zijn de dure uren
+  const evPiekM = evM.filter(r => { const u = r.tijd.getHours(); return u >= 17 && u <= 23; });
+  const evPiekKwh = evPiekM.reduce((s,r) => s + r.dImp, 0) * schaal;
+  const evVerschuifbaar = evKwh > 0 ? evPiekKwh / evKwh * 100 : 0;
+
+  // ── Warmtepomp detectie ──
+  const wpM = df.filter(r => {
+    const tot = r.l1 + r.l2 + r.l3;
+    const isEV = r.l1 > 1000 && r.l2 > 1000 && r.l3 > 1000 && tot > 9000;
+    return !isEV && tot >= 1000 && tot <= 4000;
+  });
+  const wpKwh = wpM.reduce((s,r) => s + r.dImp, 0) * schaal;
+  // WP in piekuren (17-23u)
+  const wpPiekM = wpM.filter(r => { const u = r.tijd.getHours(); return u >= 17 && u <= 23; });
+  const wpPiekKwh = wpPiekM.reduce((s,r) => s + r.dImp, 0) * schaal;
+  // WP seizoensratio voor betrouwbaarheidsscore
+  const wpWGem = wpM.filter(r => [11,12,1,2,3].includes(r.tijd.getMonth()+1)).reduce((s,r,_,a) => s + (r.l1+r.l2+r.l3)/a.length, 0) || 0;
+  const wpZGem = wpM.filter(r => [5,6,7,8,9].includes(r.tijd.getMonth()+1)).reduce((s,r,_,a) => s + (r.l1+r.l2+r.l3)/a.length, 1) || 1;
+  const wpRatio = wpZGem > 0 ? wpWGem / wpZGem : 0;
+
+  // ── Koken detectie ──
+  const kookM = df.filter(r => {
+    const u = r.tijd.getHours();
+    const tot = r.l1 + r.l2 + r.l3;
+    const mx = Math.max(r.l1, r.l2, r.l3);
+    const mn = Math.min(r.l1, r.l2, r.l3);
+    const isEV = r.l1 > 1000 && r.l2 > 1000 && r.l3 > 1000;
+    return !isEV && u >= 17 && u <= 22 && tot > 2000 && (mx - mn) > 1500;
+  });
+  const kookKwh = kookM.reduce((s,r) => s + r.dImp, 0) * schaal;
+
+  // ── Zon / zelfverbruik ──
+  const zonExportKwh = totExpKwh;
+  const dagV = df.filter(r => { const u = r.tijd.getHours(); return u >= 9 && u <= 17; }).reduce((s,r) => s + r.dImp, 0) * schaal;
+  const totProd = zonExportKwh + dagV * 0.5;
+  const zelfverbruik = Math.max(0, totProd - zonExportKwh);
+  const zelfRatio = totProd > 0 ? zelfverbruik / totProd * 100 : 0;
+  const overigKwh = Math.max(0, totImpKwh - wpKwh - evKwh - kookKwh);
+
+  // ── Prijsverschil berekening via uurprijzen (alleen dynamisch) ──
+  // Gemiddelde prijs in dure uren (17-23u) vs. goedkope uren (23-07u)
+  let gemPiekprijs = 0, gemDalprijs = 0, aantalPiek = 0, aantalDal = 0;
+  if (isDynamisch) {
+    df.forEach(r => {
+      const u = r.tijd.getHours();
+      const p = getPrijs(r.tijd);
+      if (u >= 17 && u <= 23) { gemPiekprijs += p; aantalPiek++; }
+      if (u >= 23 || u <= 6)  { gemDalprijs  += p; aantalDal++;  }
+    });
+    gemPiekprijs = aantalPiek > 0 ? gemPiekprijs / aantalPiek : 0.10;
+    gemDalprijs  = aantalDal  > 0 ? gemDalprijs  / aantalDal  : 0.06;
+  }
+  const prijsVerschil = isDynamisch ? Math.max(0, gemPiekprijs - gemDalprijs) : 0;
+
+  // ── BESPARINGEN ──────────────────────────────────────────────
+  const besparingen = [];
+
+  // 🚗 EV: ALLEEN bij dynamisch tarief
+  if (isDynamisch && staat.heeft_ev && evKwh > 100 && evPiekKwh > 0) {
+    const besparing = evPiekKwh * prijsVerschil;
+    besparingen.push({
+      type: 'automatisering',
+      titel: 'EV laden in goedkope uren',
+      icoon: '🚗',
+      min: Math.round(besparing * 0.7),
+      max: Math.round(besparing * 1.3),
+      beschrijving: `${evVerschuifbaar.toFixed(0)}% van uw laadsessies valt in de avondpiek (17–23u, gem. €${(gemPiekprijs*100).toFixed(1)}ct/kWh). Door te verschuiven naar nacht (gem. €${(gemDalprijs*100).toFixed(1)}ct/kWh) bespaart u op de werkelijke prijzen uit uw periode.`,
+      actie: 'Stel uw laadpaal in om te laden tussen 23:00 en 07:00, of koppel aan uw dynamisch contract via de app.',
+      betrouwbaarheid: evKwh > 500 ? 'hoog' : 'gemiddeld',
+    });
+  }
+
+  // 📋 Overstap naar dynamisch: ALLEEN bij vast tarief
+  // Berekening per kwartier: wat zou jij betaald hebben bij dynamisch vs wat je nu betaalt?
+  if (staat.contract_type === 'vast') {
+    // Per kwartier: verbruik × (vast tarief − werkelijke uurprijs)
+    // Positief = voordeel vast, negatief = voordeel dynamisch
+    let besparingDynamisch = 0;
+    let evBesparingVast = 0; // EV verschuifbare besparing ook bij vast tarief
+    let evPiekKwhVast = 0, evDalKwhVast = 0;
+    let gemPiekVast = 0, gemDalVast = 0, aantalPiekVast = 0, aantalDalVast = 0;
+
+    df.forEach(r => {
+      const uurprijs = getPrijs(r.tijd); // werkelijke marktprijs dat uur
+      const u = r.tijd.getHours();
+      // Besparing = wat je nu betaalt minus wat je bij dynamisch zou betalen
+      besparingDynamisch += r.dImp * (staat.tarief_levering - uurprijs);
+
+      // EV uren tracken voor piek/dal analyse
+      const isEV = r.l1 > 1000 && r.l2 > 1000 && r.l3 > 1000;
+      if (isEV) {
+        if (u >= 17 && u <= 23) { evPiekKwhVast += r.dImp; gemPiekVast += uurprijs; aantalPiekVast++; }
+        if (u >= 23 || u <= 6)  { evDalKwhVast  += r.dImp; gemDalVast  += uurprijs; aantalDalVast++;  }
+      }
+    });
+
+    // Schaal naar jaar
+    besparingDynamisch *= schaal;
+    evPiekKwhVast *= schaal;
+    evDalKwhVast  *= schaal;
+    gemPiekVast = aantalPiekVast > 0 ? gemPiekVast / aantalPiekVast : 0.10;
+    gemDalVast  = aantalDalVast  > 0 ? gemDalVast  / aantalDalVast  : 0.06;
+
+    if (besparingDynamisch > 50) {
+      besparingen.push({
+        type: 'contract',
+        titel: 'Overstap naar dynamisch tarief',
+        icoon: '📋',
+        min: Math.round(besparingDynamisch * 0.7),
+        max: Math.round(besparingDynamisch * 1.3),
+        beschrijving: `Op basis van uw werkelijke verbruik per uur vergeleken met de marktprijzen in uw periode, zou u bij dynamisch tarief ca. €${Math.round(besparingDynamisch)} per jaar besparen. U betaalt nu €${staat.tarief_levering.toFixed(2)}/kWh voor elk uur — ook als stroom maar €${(getPrijs(staat.df[Math.floor(staat.df.length/2)].tijd)*100).toFixed(0)}ct kostte.`,
+        actie: 'Vergelijk aanbieders: Tibber, Frank Energie, Eneco Dynamisch.',
+        betrouwbaarheid: staat.prijsdataGeladen ? 'hoog' : 'gemiddeld',
+      });
+    } else if (besparingDynamisch < -50) {
+      besparingen.push({
+        type: 'contract',
+        titel: 'Uw vast tarief is gunstig',
+        icoon: '✅',
+        min: 0,
+        max: 0,
+        beschrijving: `Op basis van uw werkelijke verbruiksprofiel zou u bij dynamisch tarief juist ca. €${Math.round(Math.abs(besparingDynamisch))} méér betalen. Uw huidige vaste tarief van €${staat.tarief_levering.toFixed(2)}/kWh past goed bij wanneer u verbruikt.`,
+        actie: 'Geen actie nodig — uw contract past bij uw verbruiksprofiel.',
+        betrouwbaarheid: staat.prijsdataGeladen ? 'hoog' : 'gemiddeld',
+      });
+    }
+
+    // 🚗 EV bij vast tarief: advies om te laden in uren met lage marktprijs
+    // Want ook bij vast tarief kun je slim laden — het levert geen direct geldvoordeel
+    // maar als je overstapt naar dynamisch wél. Toon het als combinatieadvies.
+    if (staat.heeft_ev && evPiekKwhVast > 50) {
+      const potentieelBijDynamisch = evPiekKwhVast * Math.max(0, gemPiekVast - gemDalVast);
+      besparingen.push({
+        type: 'automatisering',
+        titel: 'EV laden: verschuif naar goedkope uren',
+        icoon: '🚗',
+        min: Math.round(potentieelBijDynamisch * 0.7),
+        max: Math.round(potentieelBijDynamisch * 1.3),
+        beschrijving: `${((evPiekKwhVast/(evPiekKwhVast+evDalKwhVast))*100).toFixed(0)}% van uw laadsessies valt in de avondpiek (17–23u). Bij uw huidige vaste tarief maakt dit geen prijsverschil, maar als u overstapt naar dynamisch zou u €${Math.round(potentieelBijDynamisch)} extra besparen door te laden tussen 23:00 en 07:00 (gem. €${(gemDalVast*100).toFixed(1)}ct vs €${(gemPiekVast*100).toFixed(1)}ct/kWh in de avond).`,
+        actie: 'Stel uw laadpaal alvast in op nachttarief (23:00–07:00) — u bent dan klaar als u overstapt naar dynamisch.',
+        betrouwbaarheid: staat.prijsdataGeladen ? 'hoog' : 'gemiddeld',
+      });
+    }
+  }
+
+  // 🌡️ Warmtepomp: ALLEEN bij dynamisch tarief
+  if (isDynamisch && staat.heeft_wp && wpKwh > 500 && wpPiekKwh > 0) {
+    const besparing = wpPiekKwh * prijsVerschil;
+    besparingen.push({
+      type: 'automatisering',
+      titel: 'Warmtepomp slim aansturen',
+      icoon: '🌡️',
+      min: Math.round(besparing * 0.6),
+      max: Math.round(besparing * 1.4),
+      beschrijving: `Uw warmtepomp verbruikt ca. ${wpKwh.toFixed(0)} kWh/jaar, waarvan ${wpPiekKwh.toFixed(0)} kWh in de dure avonduren (gem. €${(gemPiekprijs*100).toFixed(1)}ct/kWh). Door 's ochtends voor te verwarmen bespaart u op de werkelijke uurprijzen.`,
+      actie: "Stel de warmtepomp in om overdag (10:00–16:00) te verwarmen en 's avonds terug te schakelen.",
+      betrouwbaarheid: wpRatio > 1.5 ? 'hoog' : 'gemiddeld',
+    });
+  }
+
+  // ☀️ Meer zon zelf gebruiken: altijd relevant
+  if (staat.heeft_zon && zelfRatio < 45) {
+    // Besparing = kWh die nu teruggeleverd wordt maar zelf gebruikt zou kunnen worden
+    // Verschil tussen leveringstarief en teruglevertarief
+    const tariefVerschil = isDynamisch
+      ? Math.max(0, gemPiekprijs - staat.tarief_teruglevering)
+      : Math.max(0, staat.tarief_levering - staat.tarief_teruglevering);
+    const verschuifbaarKwh = zonExportKwh * 0.3; // schatting: 30% van export is verschuifbaar
+    const besparing = verschuifbaarKwh * tariefVerschil;
+    besparingen.push({
+      type: 'automatisering',
+      titel: 'Meer zonne-energie zelf gebruiken',
+      icoon: '☀️',
+      min: Math.round(Math.max(40, besparing * 0.7)),
+      max: Math.round(Math.max(120, besparing * 1.3)),
+      beschrijving: `U levert ${zonExportKwh.toFixed(0)} kWh/jaar terug aan het net. Uw zelfverbruikratio is ca. ${zelfRatio.toFixed(0)}%. Door apparaten overdag te laten draaien tijdens zonnepiek gebruikt u meer zelf.`,
+      actie: 'Gebruik de timer op wasmachine/vaatwasser: stel in op 11:00 start. Of overweeg een thuisbatterij.',
+      betrouwbaarheid: 'gemiddeld',
+    });
+  }
+
+  return {
+    totImpKwh, totExpKwh, evKwh, wpKwh, kookKwh, overigKwh,
+    zelfverbruik, zelfRatio, zonExportKwh, wpRatio,
+    gemPiekprijs, gemDalprijs, prijsdataGeladen: staat.prijsdataGeladen,
+    besparingen,
+    totaalMin: besparingen.reduce((s,b) => s + b.min, 0),
+    totaalMax: besparingen.reduce((s,b) => s + b.max, 0),
+  };
+}
+
+// ── RESULTAAT WEERGAVE ───────────────────────────────────────────
+function toonResultaat(r) {
+  document.getElementById('res-totaal').textContent = Math.round((r.totaalMin + r.totaalMax) / 2);
+  document.getElementById('res-totaal-sub').textContent = `€${r.totaalMin} – €${r.totaalMax} per jaar`;
+
+  // Prijsdata badge toevoegen bij dynamisch
+  if (staat.contract_type === 'dynamisch') {
+    const badge = r.prijsdataGeladen
+      ? `<span style="display:inline-block;margin-top:10px;padding:4px 12px;border-radius:20px;font-size:0.75rem;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.2);color:#4ade80;">📡 Gebaseerd op werkelijke uurprijzen · gem. piek €${(r.gemPiekprijs*100).toFixed(1)}ct · dal €${(r.gemDalprijs*100).toFixed(1)}ct</span>`
+      : `<span style="display:inline-block;margin-top:10px;padding:4px 12px;border-radius:20px;font-size:0.75rem;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);color:#fbbf24;">⚠️ Prijsdata niet beschikbaar · schatting op gemiddeld uurprofiel</span>`;
+    document.getElementById('res-totaal-sub').insertAdjacentHTML('afterend', badge);
+  }
+
+  const cat = [
+    {naam:'Warmtepomp',    kwh: r.wpKwh,       kleur:'warmtepomp'},
+    {naam:'Elektrische auto', kwh: r.evKwh,    kleur:'ev'},
+    {naam:'Koken',         kwh: r.kookKwh,     kleur:'koken'},
+    {naam:'Zelfverbruik zon', kwh: r.zelfverbruik, kleur:'zon'},
+    {naam:'Overig',        kwh: r.overigKwh,   kleur:'overig'},
+  ].filter(c => c.kwh > 10);
+
+  document.getElementById('disagg-balken').innerHTML = cat.map(c => `
+    <div data-disagg="${c.kleur}">
+      <span>${c.naam}</span>
+      <span>${c.kwh.toFixed(0)} kWh/jaar (${(c.kwh / r.totImpKwh * 100).toFixed(0)}%)</span>
+      <div data-balk style="--breedte:${Math.min(100, c.kwh / r.totImpKwh * 100).toFixed(1)}%"></div>
+    </div>`).join('');
+
+  document.getElementById('advies-container').innerHTML = r.besparingen.length > 0
+    ? r.besparingen.map(b => `
+    <div data-advies="${b.type}">
+      <span data-icoon>${b.icoon}</span>
+      <h3>${b.titel}</h3>
+      <span data-betrouwbaarheid="${b.betrouwbaarheid}">${b.betrouwbaarheid}</span>
+      <p data-bedrag>€${Math.round((b.min+b.max)/2)} <small>(€${b.min}–€${b.max}/jaar)</small></p>
+      <p>${b.beschrijving}</p>
+      <p data-actie>${b.actie}</p>
+    </div>`).join('')
+    : `<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:0.9rem;">✅ Geen directe besparingen gevonden op basis van uw profiel.</div>`;
+}
+</script>
+
+</body>
+</html>
